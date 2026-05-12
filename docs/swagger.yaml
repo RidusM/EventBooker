@@ -1,0 +1,535 @@
+basePath: /
+definitions:
+  handler.BookEventRequest:
+    properties:
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440003
+        type: string
+    required:
+    - user_id
+    type: object
+  handler.BookEventResponse:
+    properties:
+      created_at:
+        example: "2023-10-27T10:00:00Z"
+        type: string
+      event_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      expires_at:
+        example: "2023-10-27T10:10:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+      status:
+        example: pending
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440003
+        type: string
+    type: object
+  handler.ConfirmBookingRequest:
+    properties:
+      booking_id:
+        example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+    required:
+    - booking_id
+    type: object
+  handler.ConfirmBookingResponse:
+    properties:
+      status:
+        example: confirmed
+        type: string
+    type: object
+  handler.CreateEventRequest:
+    properties:
+      booking_ttl_min:
+        example: 15
+        maximum: 10080
+        minimum: 3
+        type: integer
+      date:
+        example: "2025-10-29T19:00:00Z"
+        type: string
+      description:
+        example: SABATON income with tour in Russia
+        type: string
+      title:
+        example: Winter tour SABATON
+        type: string
+      total_seats:
+        example: 350
+        minimum: 0
+        type: integer
+    required:
+    - date
+    - description
+    - title
+    - total_seats
+    type: object
+  handler.CreateEventResponse:
+    properties:
+      book_event_ttl:
+        example: 15
+        type: integer
+      created_at:
+        example: "2023-10-26T10:00:00Z"
+        type: string
+      date:
+        example: "2025-10-29T19:00:00Z"
+        type: string
+      description:
+        example: SABATON income with tour in Russia
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      title:
+        example: Winter tour SABATON
+        type: string
+      total_seats:
+        example: 350
+        type: integer
+      updated_at:
+        example: "2023-10-26T10:00:00Z"
+        type: string
+    type: object
+  handler.ErrorResponse:
+    properties:
+      code:
+        example: not_found
+        type: string
+      details:
+        example: event with id 123 does not exist
+        type: string
+      error:
+        example: event not found
+        type: string
+    type: object
+  handler.EventWithStatsResponse:
+    properties:
+      available_seats:
+        example: 223
+        type: integer
+      book_event_ttl:
+        example: 15
+        type: integer
+      booked_seats:
+        example: 127
+        type: integer
+      created_at:
+        example: "2023-10-26T10:00:00Z"
+        type: string
+      date:
+        example: "2025-10-29T19:00:00Z"
+        type: string
+      description:
+        example: SABATON income with tour in Russia
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      title:
+        example: Winter tour SABATON
+        type: string
+      total_seats:
+        example: 350
+        type: integer
+      updated_at:
+        example: "2023-10-26T10:00:00Z"
+        type: string
+    type: object
+  handler.HealthResponse:
+    properties:
+      status:
+        example: ok
+        type: string
+      time:
+        example: "2026-05-08T06:04:15Z"
+        type: string
+    type: object
+  handler.LinkTokenResponse:
+    properties:
+      expires_in:
+        example: 1 hour
+        type: string
+      link:
+        example: https://t.me/mybot?start=abc123
+        type: string
+      message:
+        example: Click the link in Telegram to link your account
+        type: string
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    required:
+    - expires_in
+    - link
+    - token
+    type: object
+  handler.ListEventsResponse:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/handler.EventWithStatsResponse'
+        type: array
+      total:
+        example: 42
+        type: integer
+    type: object
+  handler.ListUsersResponse:
+    properties:
+      total:
+        example: 128
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/handler.UserResponse'
+        type: array
+    type: object
+  handler.RegisterUserRequest:
+    properties:
+      email:
+        example: john.doe@example.com
+        type: string
+      name:
+        example: John Doe
+        maxLength: 100
+        minLength: 1
+        type: string
+    required:
+    - name
+    type: object
+  handler.RegisterUserResponse:
+    properties:
+      created_at:
+        example: "2023-10-26T10:00:00Z"
+        type: string
+      email:
+        example: ivan@example.com
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440003
+        type: string
+      name:
+        example: Ivan Petrov
+        type: string
+      telegram_id:
+        example: 123456789
+        type: integer
+      updated_at:
+        example: "2023-10-26T10:00:00Z"
+        type: string
+    type: object
+  handler.UserResponse:
+    properties:
+      created_at:
+        example: "2023-10-26T10:00:00Z"
+        type: string
+      email:
+        example: ivan@example.com
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440003
+        type: string
+      name:
+        example: Ivan Petrov
+        type: string
+      telegram_id:
+        example: 123456789
+        type: integer
+      updated_at:
+        example: "2023-10-26T10:00:00Z"
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: stormkillpeople@gmail.com
+    name: RidusM
+  description: API for work with image processor
+  license:
+    name: MIT-0
+    url: https://github.com/aws/mit-0
+  termsOfService: http://swagger.io/terms/
+  title: Event Booker Service API
+  version: "1.0"
+paths:
+  /bookings/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Finalize a reservation by confirming a pending booking. Must be
+        called before TTL expires.
+      parameters:
+      - description: Confirmation details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ConfirmBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Booking confirmed successfully
+          schema:
+            $ref: '#/definitions/handler.ConfirmBookingResponse'
+        "400":
+          description: Invalid request body or booking ID format
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Booking not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Booking already confirmed, cancelled, or expired
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Confirm a pending booking
+      tags:
+      - Bookings
+  /events:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of all events with booking statistics (booked, confirmed,
+        available seats)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of events with stats
+          schema:
+            $ref: '#/definitions/handler.ListEventsResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: List all events with statistics
+      tags:
+      - Events
+    post:
+      consumes:
+      - application/json
+      description: Creates a new event with specified parameters. Returns the created
+        event with generated ID.
+      parameters:
+      - description: Event creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Event created successfully
+          schema:
+            $ref: '#/definitions/handler.CreateEventResponse'
+        "400":
+          description: Invalid request body or validation error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict - event with same data exists
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Create a new event
+      tags:
+      - Events
+  /events/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Returns detailed information about a specific event including booking
+        statistics
+      parameters:
+      - description: Event UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Event details with stats
+          schema:
+            $ref: '#/definitions/handler.EventWithStatsResponse'
+        "400":
+          description: Invalid event ID format
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Event not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Get event details with statistics
+      tags:
+      - Events
+  /events/{id}/book:
+    post:
+      consumes:
+      - application/json
+      description: Reserve a seat for a specific event. Creates a pending booking
+        that requires confirmation before TTL expires.
+      parameters:
+      - description: Event UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Booking details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.BookEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Booking created successfully
+          schema:
+            $ref: '#/definitions/handler.BookEventResponse'
+        "400":
+          description: Invalid request body or UUID format
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Event or user not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: No seats available or booking conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Book an event seat
+      tags:
+      - Bookings
+  /health:
+    get:
+      description: Return service status and current timestamp. No authentication
+        required.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is healthy
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+      summary: Health check endpoint
+      tags:
+      - System
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all registered users. For administrative purposes.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            $ref: '#/definitions/handler.ListUsersResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: List all users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Registers a user to receive notifications via Email or Telegram.
+        At least one contact method is required.
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/handler.RegisterUserResponse'
+        "400":
+          description: Invalid input data - email or telegram_id required
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: User with this email or telegram_id already exists
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Users
+  /users/{user_id}/link-token:
+    post:
+      consumes:
+      - application/json
+      description: Generates a one-time token to link the user's account with Telegram
+        bot. Token expires in 1 hour.
+      parameters:
+      - description: User UUID
+        format: uuid
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Link token and instruction
+          schema:
+            $ref: '#/definitions/handler.LinkTokenResponse'
+        "400":
+          description: Invalid user ID format
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Generate Telegram Link Token
+      tags:
+      - Users
+swagger: "2.0"
