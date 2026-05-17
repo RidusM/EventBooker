@@ -15,23 +15,23 @@ const (
 
 // swagger:model CreateEventRequest
 type CreateEventRequest struct {
-	Title        string    `json:"title"           binding:"required"        example:"Winter tour SABATON"`
-	Description  string    `json:"description"     binding:"required"        example:"SABATON income with tour in Russia"`
-	Date         time.Time `json:"date"            binding:"required"        example:"2025-10-29T19:00:00Z"`
-	TotalSeats   int       `json:"total_seats"     binding:"required,gte=0"  example:"350"`
-	BookEventTTL int       `json:"booking_ttl_min" binding:"gte=3,lte=10080" example:"15"`
+	Title          string    `json:"title"           binding:"required"        example:"Winter tour SABATON"`
+	Description    string    `json:"description"     binding:"required"        example:"SABATON income with tour in Russia"`
+	Date           time.Time `json:"date"            binding:"required"        example:"2025-10-29T19:00:00Z"`
+	TotalSeats     int       `json:"total_seats"     binding:"required,gte=0"  example:"350"`
+	BookingTTLMins int       `json:"booking_ttl_min" binding:"gte=3,lte=10080" example:"15"`
 }
 
 // swagger:model CreateEventResponse
 type CreateEventResponse struct {
-	ID           uuid.UUID `json:"id"             example:"550e8400-e29b-41d4-a716-446655440001"`
-	Title        string    `json:"title"          example:"Winter tour SABATON"`
-	Description  string    `json:"description"    example:"SABATON income with tour in Russia"`
-	Date         time.Time `json:"date"           example:"2025-10-29T19:00:00Z"`
-	TotalSeats   int       `json:"total_seats"    example:"350"`
-	BookEventTTL int       `json:"book_event_ttl" example:"15"`
-	CreatedAt    time.Time `json:"created_at"     example:"2023-10-26T10:00:00Z"`
-	UpdatedAt    time.Time `json:"updated_at"     example:"2023-10-26T10:00:00Z"`
+	ID             uuid.UUID `json:"id"              example:"550e8400-e29b-41d4-a716-446655440001"`
+	Title          string    `json:"title"           example:"Winter tour SABATON"`
+	Description    string    `json:"description"     example:"SABATON income with tour in Russia"`
+	Date           time.Time `json:"date"            example:"2025-10-29T19:00:00Z"`
+	TotalSeats     int       `json:"total_seats"     example:"350"`
+	BookingTTLMins int       `json:"booking_ttl_min" example:"15"`
+	CreatedAt      time.Time `json:"created_at"      example:"2023-10-26T10:00:00Z"`
+	UpdatedAt      time.Time `json:"updated_at"      example:"2023-10-26T10:00:00Z"`
 }
 
 // swagger:model EventWithStatsResponse
@@ -43,7 +43,7 @@ type EventWithStatsResponse struct {
 	TotalSeats     int       `json:"total_seats"     example:"350"`
 	BookedSeats    int       `json:"booked_seats"    example:"127"`
 	AvailableSeats int       `json:"available_seats" example:"223"`
-	BookEventTTL   int       `json:"book_event_ttl"  example:"15"`
+	BookingTTLMins int       `json:"booking_ttl_min" example:"15"`
 	CreatedAt      time.Time `json:"created_at"      example:"2023-10-26T10:00:00Z"`
 	UpdatedAt      time.Time `json:"updated_at"      example:"2023-10-26T10:00:00Z"`
 }
@@ -116,6 +116,19 @@ type RegisterUserResponse struct {
 type UserRegisteredResponse struct {
 	UserID  uuid.UUID `json:"user_id" binding:"required,uuid" example:"550e8400-e29b-41d4-a716-446655440003"`
 	Message string    `json:"message"                         example:"Registered via Email"`
+}
+
+// swagger:model LoginRequest
+type LoginRequest struct {
+	Email string `json:"email" binding:"required,email" example:"user@example.com"`
+}
+
+// swagger:model LoginResponse
+type LoginResponse struct {
+	UserID  uuid.UUID `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440003"`
+	Name    string    `json:"name"    example:"Ivan Petrov"`
+	Email   string    `json:"email"   example:"ivan@example.com"`
+	Message string    `json:"message" example:"Logged in successfully"`
 }
 
 // swagger:model UserResponse

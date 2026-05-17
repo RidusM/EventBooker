@@ -1,11 +1,9 @@
 package service
 
-import "time"
-
 type Option func(*EventService)
 
-func BookEventTTL(ttl time.Duration) Option {
+func BookingTTLMin(ttl int) Option {
 	return func(s *EventService) {
-		s.bookEventTTL = ttl
+		s.bookingTTLMin = ttl
 	}
 }

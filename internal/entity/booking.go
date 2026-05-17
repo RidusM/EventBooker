@@ -17,5 +17,5 @@ type Booking struct {
 }
 
 func (b *Booking) IsExpired() bool {
-	return b.Status == StatusPending && time.Now().After(b.ExpiresAt)
+	return b.Status == StatusPending && time.Now().UTC().After(b.ExpiresAt)
 }

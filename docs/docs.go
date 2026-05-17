@@ -23,6 +23,110 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user by email. Returns user data on success.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "User login by email",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "schema": {
+                            "$ref": "#/definitions/handler.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid email format",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sign-up": {
+            "post": {
+                "description": "Registers a user to receive notifications via Email or Telegram. At least one contact method is required.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Register a new user",
+                "parameters": [
+                    {
+                        "description": "User registration data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.RegisterUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "schema": {
+                            "$ref": "#/definitions/handler.RegisterUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input data - email or telegram_id required",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "User with this email or telegram_id already exists",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/bookings/confirm": {
             "post": {
                 "description": "Finalize a reservation by confirming a pending booking. Must be called before TTL expires.",
@@ -324,51 +428,43 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Registers a user to receive notifications via Email or Telegram. At least one contact method is required.",
-                "consumes": [
-                    "application/json"
-                ],
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "description": "Returns user data by ID. Used for checking Telegram link status.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Users"
                 ],
-                "summary": "Register a new user",
+                "summary": "Get user by ID",
                 "parameters": [
                     {
-                        "description": "User registration data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.RegisterUserRequest"
-                        }
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "User UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "User registered successfully",
+                    "200": {
+                        "description": "User data",
                         "schema": {
-                            "$ref": "#/definitions/handler.RegisterUserResponse"
+                            "$ref": "#/definitions/handler.UserResponse"
                         }
                     },
                     "400": {
-                        "description": "Invalid input data - email or telegram_id required",
+                        "description": "Invalid ID format",
                         "schema": {
                             "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
-                    "409": {
-                        "description": "User with this email or telegram_id already exists",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
+                    "404": {
+                        "description": "User not found",
                         "schema": {
                             "$ref": "#/definitions/handler.ErrorResponse"
                         }
@@ -528,7 +624,7 @@ const docTemplate = `{
         "handler.CreateEventResponse": {
             "type": "object",
             "properties": {
-                "book_event_ttl": {
+                "booking_ttl_min": {
                     "type": "integer",
                     "example": 15
                 },
@@ -586,13 +682,13 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 223
                 },
-                "book_event_ttl": {
-                    "type": "integer",
-                    "example": 15
-                },
                 "booked_seats": {
                     "type": "integer",
                     "example": 127
+                },
+                "booking_ttl_min": {
+                    "type": "integer",
+                    "example": 15
                 },
                 "created_at": {
                     "type": "string",
@@ -690,6 +786,39 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/handler.UserResponse"
                     }
+                }
+            }
+        },
+        "handler.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "handler.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "ivan@example.com"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Logged in successfully"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Ivan Petrov"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440003"
                 }
             }
         },

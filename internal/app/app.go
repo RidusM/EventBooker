@@ -87,7 +87,7 @@ func initServices(
 	multiNotifier := notifier.NewMultiNotifier(emailNotifier, tgNotifier)
 	log.LogAttrs(ctx, logger.InfoLevel, "multi-notifier initialized with email and telegram")
 
-	eventSvc := service.NewEventService(eventRepo, tm, log, service.BookEventTTL(cfg.Service.BookEventTTL))
+	eventSvc := service.NewEventService(eventRepo, tm, log, service.BookingTTLMin(cfg.Service.BookingTTLMins))
 
 	userSvc := service.NewUserService(userRepo, tm, log)
 

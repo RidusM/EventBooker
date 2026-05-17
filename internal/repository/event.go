@@ -33,7 +33,7 @@ func (r *EventRepository) Create(
 
 	sql, args, err := r.db.Insert("events").
 		Columns(_eventColumnts).
-		Values(e.ID, e.Title, e.Description, e.Date, e.TotalSeats, e.BookEventTTL, e.CreatedAt, e.UpdatedAt).
+		Values(e.ID, e.Title, e.Description, e.Date, e.TotalSeats, e.BookingTTLMin, e.CreatedAt, e.UpdatedAt).
 		ToSql()
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
@@ -80,7 +80,7 @@ func (r *EventRepository) GetByID(
 		&e.Description,
 		&e.Date,
 		&e.TotalSeats,
-		&e.BookEventTTL,
+		&e.BookingTTLMin,
 		&e.CreatedAt,
 		&e.UpdatedAt,
 	)
@@ -123,7 +123,7 @@ func (r *EventRepository) List(
 			&e.Description,
 			&e.Date,
 			&e.TotalSeats,
-			&e.BookEventTTL,
+			&e.BookingTTLMin,
 			&e.CreatedAt,
 			&e.UpdatedAt,
 		); err != nil {

@@ -33,7 +33,9 @@ type (
 		RegisterUser(ctx context.Context, req service.RegisterUserRequest) (*entity.User, error)
 		GenerateLinkToken(ctx context.Context, userID uuid.UUID) (string, error)
 		LinkTelegramByToken(ctx context.Context, token string, chatID *int64) error
+		GetUserByID(ctx context.Context, id uuid.UUID) (*entity.User, error)
 		GetUserByTelegramID(ctx context.Context, chatID *int64) (*entity.User, error)
+		LoginByEmail(ctx context.Context, email string) (*entity.User, error)
 		List(ctx context.Context) ([]entity.User, error)
 	}
 )

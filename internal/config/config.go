@@ -22,7 +22,7 @@ type (
 	}
 
 	Service struct {
-		BookEventTTL time.Duration `env:"BOOK_EVENT_TTL" env-default:"15" validate:"gte=3m,lte=60m"`
+		BookingTTLMins int `env:"BOOK_EVENT_TTL" env-default:"15" validate:"min=3,max=1440"`
 	}
 
 	Database struct {

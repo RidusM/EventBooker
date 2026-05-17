@@ -48,7 +48,7 @@ func (s *UserService) RegisterUser(ctx context.Context, req RegisterUserRequest)
 	const op = "service.RegisterUser"
 
 	log := s.log.With("op", op)
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 	defer logSlowOperation(ctx, s.log, op, startTime,
 		logger.String("name", req.Name),
 		logger.String("email", req.Email),
@@ -78,7 +78,7 @@ func (s *UserService) RegisterUser(ctx context.Context, req RegisterUserRequest)
 		Name:       req.Name,
 		Email:      req.Email,
 		TelegramID: telegramID,
-		CreatedAt:  time.Now(),
+		CreatedAt:  time.Now().UTC(),
 	}
 
 	err = s.tm.ExecuteInTransaction(ctx, "register_user", func(tx pgxdriver.QueryExecuter) error {
@@ -93,23 +93,47 @@ func (s *UserService) RegisterUser(ctx context.Context, req RegisterUserRequest)
 	}
 
 	log.LogAttrs(ctx, logger.InfoLevel, "user registered",
-		logger.String("user_id", id.String()),
+		logger.Any("user_id", id),
 		logger.Duration("duration", time.Since(startTime)),
 	)
 	return &user, nil
+}
+
+func (s *UserService) LoginByEmail(ctx context.Context, email string) (*entity.User, error) {
+	const op = "service.user.LoginByEmail"
+
+	log := s.log.With("op", op, "email", email)
+	startTime := time.Now().UTC()
+	defer logSlowOperation(ctx, s.log, op, startTime)
+
+	log.LogAttrs(ctx, logger.InfoLevel, "login user requested")
+
+	user, err := s.userRepo.GetByEmail(ctx, nil, email)
+	if err != nil {
+		if errors.Is(err, entity.ErrUserNotFound) {
+			return nil, fmt.Errorf("%s: %w: user with email %s not found", op, entity.ErrUserNotFound, email)
+		}
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.LogAttrs(ctx, logger.InfoLevel, "user login",
+		logger.Any("user_id", user.ID),
+	)
+
+	return user, nil
 }
 
 func (s *UserService) GenerateLinkToken(ctx context.Context, userID uuid.UUID) (string, error) {
 	const op = "service.GenerateLinkToken"
 
 	log := s.log.With("op", op)
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 	defer logSlowOperation(ctx, s.log, op, startTime,
-		logger.String("user_id", userID.String()),
+		logger.Any("user_id", userID),
 	)
 
 	log.LogAttrs(ctx, logger.InfoLevel, "generate link token requested",
-		logger.String("user_id", userID.String()),
+		logger.Any("user_id", userID),
 	)
 
 	bytes := make([]byte, _serviceTokenByteLength)
@@ -118,7 +142,7 @@ func (s *UserService) GenerateLinkToken(ctx context.Context, userID uuid.UUID) (
 	}
 	token := hex.EncodeToString(bytes)
 
-	expiresAt := time.Now().Add(1 * time.Hour)
+	expiresAt := time.Now().UTC().Add(1 * time.Hour)
 
 	err := s.tm.ExecuteInTransaction(ctx, "create_link_token", func(tx pgxdriver.QueryExecuter) error {
 		if err := s.userRepo.CreateLinkToken(ctx, tx, userID, token, expiresAt); err != nil {
@@ -132,7 +156,7 @@ func (s *UserService) GenerateLinkToken(ctx context.Context, userID uuid.UUID) (
 	}
 
 	log.LogAttrs(ctx, logger.InfoLevel, "link token generated successfully",
-		logger.String("user_id", userID.String()),
+		logger.Any("user_id", userID),
 		logger.Duration("duration", time.Since(startTime)),
 	)
 	return token, nil
@@ -142,7 +166,7 @@ func (s *UserService) LinkTelegramByToken(ctx context.Context, token string, cha
 	const op = "service.LinkTelegramByToken"
 
 	log := s.log.With("op", op)
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 	defer logSlowOperation(ctx, s.log, op, startTime,
 		logger.Int64("chat_id", *chatID),
 	)
@@ -188,11 +212,37 @@ func (s *UserService) LinkTelegramByToken(ctx context.Context, token string, cha
 	return nil
 }
 
+func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
+	const op = "service.GetUserByID"
+
+	log := s.log.With("op", op)
+	startTime := time.Now().UTC()
+	defer logSlowOperation(ctx, s.log, op, startTime)
+
+	log.LogAttrs(ctx, logger.DebugLevel, "get user by id requested")
+
+	user, err := s.userRepo.GetByID(ctx, nil, id)
+	if err != nil {
+		if errors.Is(err, entity.ErrUserNotFound) {
+			log.LogAttrs(ctx, logger.DebugLevel, "user not found by id")
+		} else {
+			log.LogAttrs(ctx, logger.ErrorLevel, "get user by id failed", logger.Any("error", err))
+		}
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.LogAttrs(ctx, logger.DebugLevel, "user found by id",
+		logger.Any("user_id", user.ID),
+		logger.Duration("duration", time.Since(startTime)),
+	)
+	return user, nil
+}
+
 func (s *UserService) GetUserByTelegramID(ctx context.Context, chatID *int64) (*entity.User, error) {
 	const op = "service.GetUserByTelegramID"
 
 	log := s.log.With("op", op)
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 	defer logSlowOperation(ctx, s.log, op, startTime,
 		logger.Int64("chat_id", *chatID),
 	)
@@ -212,7 +262,7 @@ func (s *UserService) GetUserByTelegramID(ctx context.Context, chatID *int64) (*
 	}
 
 	log.LogAttrs(ctx, logger.DebugLevel, "user found by telegram id",
-		logger.String("user_id", user.ID.String()),
+		logger.Any("user_id", user.ID),
 		logger.Duration("duration", time.Since(startTime)),
 	)
 	return user, nil
@@ -254,7 +304,7 @@ func (s *UserService) GetTelegramStartHandler() func(ctx context.Context, userna
 
 		default:
 			log.LogAttrs(ctx, logger.InfoLevel, "existing user found",
-				logger.String("user_id", user.ID.String()),
+				logger.Any("user_id", user.ID),
 			)
 		}
 

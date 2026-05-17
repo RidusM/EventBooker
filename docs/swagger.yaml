@@ -71,7 +71,7 @@ definitions:
     type: object
   handler.CreateEventResponse:
     properties:
-      book_event_ttl:
+      booking_ttl_min:
         example: 15
         type: integer
       created_at:
@@ -113,11 +113,11 @@ definitions:
       available_seats:
         example: 223
         type: integer
-      book_event_ttl:
-        example: 15
-        type: integer
       booked_seats:
         example: 127
+        type: integer
+      booking_ttl_min:
+        example: 15
         type: integer
       created_at:
         example: "2023-10-26T10:00:00Z"
@@ -189,6 +189,29 @@ definitions:
           $ref: '#/definitions/handler.UserResponse'
         type: array
     type: object
+  handler.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+    required:
+    - email
+    type: object
+  handler.LoginResponse:
+    properties:
+      email:
+        example: ivan@example.com
+        type: string
+      message:
+        example: Logged in successfully
+        type: string
+      name:
+        example: Ivan Petrov
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440003
+        type: string
+    type: object
   handler.RegisterUserRequest:
     properties:
       email:
@@ -257,6 +280,75 @@ info:
   title: Event Booker Service API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user by email. Returns user data on success.
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: '#/definitions/handler.LoginResponse'
+        "400":
+          description: Invalid email format
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: User login by email
+      tags:
+      - Auth
+  /auth/sign-up:
+    post:
+      consumes:
+      - application/json
+      description: Registers a user to receive notifications via Email or Telegram.
+        At least one contact method is required.
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/handler.RegisterUserResponse'
+        "400":
+          description: Invalid input data - email or telegram_id required
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: User with this email or telegram_id already exists
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Users
   /bookings/confirm:
     post:
       consumes:
@@ -463,38 +555,32 @@ paths:
       summary: List all users
       tags:
       - Users
-    post:
-      consumes:
-      - application/json
-      description: Registers a user to receive notifications via Email or Telegram.
-        At least one contact method is required.
+  /users/{id}:
+    get:
+      description: Returns user data by ID. Used for checking Telegram link status.
       parameters:
-      - description: User registration data
-        in: body
-        name: request
+      - description: User UUID
+        format: uuid
+        in: path
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/handler.RegisterUserRequest'
+        type: string
       produces:
       - application/json
       responses:
-        "201":
-          description: User registered successfully
+        "200":
+          description: User data
           schema:
-            $ref: '#/definitions/handler.RegisterUserResponse'
+            $ref: '#/definitions/handler.UserResponse'
         "400":
-          description: Invalid input data - email or telegram_id required
+          description: Invalid ID format
           schema:
             $ref: '#/definitions/handler.ErrorResponse'
-        "409":
-          description: User with this email or telegram_id already exists
+        "404":
+          description: User not found
           schema:
             $ref: '#/definitions/handler.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      summary: Register a new user
+      summary: Get user by ID
       tags:
       - Users
   /users/{user_id}/link-token:

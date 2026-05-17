@@ -41,6 +41,7 @@ type (
 		Create(ctx context.Context, qe pgxdriver.QueryExecuter, u entity.User) error
 		GetByID(ctx context.Context, qe pgxdriver.QueryExecuter, id uuid.UUID) (*entity.User, error)
 		GetByTelegramID(ctx context.Context, qe pgxdriver.QueryExecuter, chatID *int64) (*entity.User, error)
+		GetByEmail(ctx context.Context, qe pgxdriver.QueryExecuter, email string) (*entity.User, error)
 		UpdateTelegramID(ctx context.Context, qe pgxdriver.QueryExecuter, userID uuid.UUID, chatID *int64) error
 		CreateLinkToken(
 			ctx context.Context,

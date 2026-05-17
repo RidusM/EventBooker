@@ -82,6 +82,38 @@ func (r *UserRepository) GetByID(ctx context.Context,
 	return &u, nil
 }
 
+func (r *UserRepository) GetByEmail(
+	ctx context.Context,
+	qe pgxdriver.QueryExecuter,
+	email string,
+) (*entity.User, error) {
+	const op = "repository.user.GetByEmail"
+
+	sql, args, err := r.db.Select(_userColumns).
+		From("users").
+		Where(squirrel.Eq{"email": email}).
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var u entity.User
+	err = execOrDB(qe, r.db).QueryRow(ctx, sql, args...).Scan(
+		&u.ID,
+		&u.Name,
+		&u.Email,
+		&u.TelegramID,
+		&u.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("%s: %w", op, entity.ErrUserNotFound)
+		}
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	return &u, nil
+}
+
 func (r *UserRepository) GetByTelegramID(ctx context.Context,
 	qe pgxdriver.QueryExecuter,
 	chatID *int64,
@@ -189,7 +221,7 @@ func (r *UserRepository) GetUserByLinkToken(
 		return uuid.Nil, fmt.Errorf("%s: query token: %w", op, err)
 	}
 
-	if time.Now().After(expiresAt) {
+	if time.Now().UTC().After(expiresAt) {
 		return uuid.Nil, fmt.Errorf("%s: %w", op, entity.ErrInvalidData)
 	}
 

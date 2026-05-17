@@ -52,15 +52,15 @@ func (s *BookingService) Book(ctx context.Context, eventID, userID uuid.UUID) (*
 	const op = "service.booking.Book"
 
 	log := s.log.With("op", op)
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 	defer logSlowOperation(ctx, s.log, op, startTime,
-		logger.String("event_id", eventID.String()),
-		logger.String("user_id", userID.String()),
+		logger.Any("event_id", eventID),
+		logger.Any("user_id", userID),
 	)
 
 	log.LogAttrs(ctx, logger.InfoLevel, "book seat requested",
-		logger.String("event_id", eventID.String()),
-		logger.String("user_id", userID.String()),
+		logger.Any("event_id", eventID),
+		logger.Any("user_id", userID),
 	)
 
 	var booking entity.Booking
@@ -100,7 +100,7 @@ func (s *BookingService) Book(ctx context.Context, eventID, userID uuid.UUID) (*
 			EventID:   eventID,
 			UserID:    userID,
 			Status:    entity.StatusPending,
-			ExpiresAt: now.Add(event.BookEventTTL),
+			ExpiresAt: now.Add(time.Duration(event.BookingTTLMin) * time.Minute),
 			CreatedAt: now,
 			UpdatedAt: &now,
 		}
@@ -113,7 +113,7 @@ func (s *BookingService) Book(ctx context.Context, eventID, userID uuid.UUID) (*
 	}
 
 	log.LogAttrs(ctx, logger.InfoLevel, "booking created",
-		logger.String("booking_id", booking.ID.String()),
+		logger.Any("booking_id", booking.ID),
 		logger.Duration("duration", time.Since(startTime)),
 	)
 	return &booking, nil
@@ -122,14 +122,14 @@ func (s *BookingService) Book(ctx context.Context, eventID, userID uuid.UUID) (*
 func (s *BookingService) Confirm(ctx context.Context, bookingID uuid.UUID) error {
 	const op = "service.booking.Confirm"
 
-	log := s.log.With("op", op, "booking_id", bookingID.String())
-	startTime := time.Now()
+	log := s.log.With("op", op, "booking_id", bookingID)
+	startTime := time.Now().UTC()
 	defer logSlowOperation(ctx, s.log, op, startTime,
-		logger.String("booking_id", bookingID.String()),
+		logger.Any("booking_id", bookingID),
 	)
 
 	log.LogAttrs(ctx, logger.InfoLevel, "confirm booking requested",
-		logger.String("booking_id", bookingID.String()),
+		logger.Any("booking_id", bookingID),
 	)
 
 	err := s.tm.ExecuteInTransaction(ctx, op, func(tx pgxdriver.QueryExecuter) error {
@@ -168,7 +168,7 @@ func (s *BookingService) Confirm(ctx context.Context, bookingID uuid.UUID) error
 	}
 
 	log.LogAttrs(ctx, logger.InfoLevel, "booking confirmed",
-		logger.String("booking_id", bookingID.String()),
+		logger.Any("booking_id", bookingID),
 		logger.Duration("duration", time.Since(startTime)),
 	)
 	return nil
@@ -217,7 +217,7 @@ func (s *BookingService) processExpired(ctx context.Context) {
 	const op = "service.booking.processExpired"
 
 	log := s.log.With("op", op)
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 
 	var expired []entity.Booking
 	err := s.tm.ExecuteInTransaction(ctx, op, func(tx pgxdriver.QueryExecuter) error {
@@ -234,7 +234,7 @@ func (s *BookingService) processExpired(ctx context.Context) {
 		for _, b := range expired {
 			if err = s.bookingRepo.UpdateStatus(ctx, tx, b.ID, entity.StatusCancelled); err != nil {
 				log.LogAttrs(ctx, logger.ErrorLevel, "cancel expired booking failed",
-					logger.String("booking_id", b.ID.String()),
+					logger.Any("booking_id", b.ID),
 					logger.Any("error", err),
 				)
 			}
@@ -262,7 +262,7 @@ func (s *BookingService) notifyExpired(ctx context.Context, b entity.Booking) {
 	user, err := s.userRepo.GetByID(ctx, nil, b.UserID)
 	if err != nil {
 		s.log.LogAttrs(ctx, logger.ErrorLevel, "notify expired: get user failed",
-			logger.String("booking_id", b.ID.String()),
+			logger.Any("booking_id", b.ID),
 			logger.Any("error", err),
 		)
 		return
@@ -271,28 +271,31 @@ func (s *BookingService) notifyExpired(ctx context.Context, b entity.Booking) {
 	event, err := s.eventRepo.GetByID(ctx, nil, b.EventID, false)
 	if err != nil {
 		s.log.LogAttrs(ctx, logger.ErrorLevel, "notify expired: get event failed",
-			logger.String("booking_id", b.ID.String()),
+			logger.Any("booking_id", b.ID),
 			logger.Any("error", err),
 		)
 		return
 	}
 
 	req := entity.CancelledNotification{
+		BookingID:  b.ID,
+		UserID:     b.UserID,
 		UserName:   user.Name,
 		UserEmail:  user.Email,
 		TelegramID: user.TelegramID,
+		EventID:    b.EventID,
 		EventTitle: event.Title,
 		EventDate:  event.Date.Format("02.01.2006 15:04"),
 	}
 
 	if err = s.notifier.NotifyBookingCancelled(ctx, req); err != nil {
 		s.log.LogAttrs(ctx, logger.ErrorLevel, "notify expired: send failed",
-			logger.String("booking_id", b.ID.String()),
+			logger.Any("booking_id", b.ID),
 			logger.Any("error", err),
 		)
 	} else {
 		s.log.LogAttrs(ctx, logger.InfoLevel, "expiry notification sent",
-			logger.String("booking_id", b.ID.String()),
+			logger.Any("booking_id", b.ID),
 		)
 	}
 }

@@ -38,6 +38,10 @@ func NewEmailNotifier(
 func (e *EmailNotifier) NotifyBookingCancelled(ctx context.Context, req entity.CancelledNotification) error {
 	const op = "notifier.email.NotifyBookingCancelled"
 	if req.UserEmail == "" {
+		e.log.LogAttrs(ctx, logger.WarnLevel, "skipping email notification: no user email",
+			logger.Any("booking_id", req.BookingID),
+			logger.Any("user_id", req.UserID),
+		)
 		return nil
 	}
 

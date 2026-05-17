@@ -18,11 +18,11 @@ const _defaultTTL = 15
 
 type (
 	CreateEventRequest struct {
-		Title        string
-		Description  string
-		Date         time.Time
-		TotalSeats   int
-		BookEventTTL time.Duration
+		Title         string
+		Description   string
+		Date          time.Time
+		TotalSeats    int
+		BookingTTLMin int
 	}
 
 	EventService struct {
@@ -30,7 +30,7 @@ type (
 		tm        transaction.Manager
 		log       logger.Logger
 
-		bookEventTTL time.Duration
+		bookingTTLMin int
 	}
 )
 
@@ -41,10 +41,10 @@ func NewEventService(
 	opts ...Option,
 ) *EventService {
 	s := &EventService{
-		eventRepo:    eventRepo,
-		tm:           tm,
-		bookEventTTL: _defaultTTL,
-		log:          log,
+		eventRepo:     eventRepo,
+		tm:            tm,
+		bookingTTLMin: _defaultTTL,
+		log:           log,
 	}
 
 	for _, opt := range opts {
@@ -58,7 +58,7 @@ func (s *EventService) Create(ctx context.Context, req CreateEventRequest) (*ent
 	const op = "service.event.Create"
 
 	log := s.log.With("op", op)
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 	defer logSlowOperation(ctx, s.log, op, startTime,
 		logger.String("title", req.Title),
 	)
@@ -68,7 +68,7 @@ func (s *EventService) Create(ctx context.Context, req CreateEventRequest) (*ent
 		logger.Int("total_seats", req.TotalSeats),
 	)
 
-	if req.Date.Before(time.Now()) {
+	if req.Date.Before(time.Now().UTC()) {
 		return nil, fmt.Errorf("%s: %w: date must be in future", op, entity.ErrInvalidData)
 	}
 	if req.TotalSeats <= 0 {
@@ -80,16 +80,17 @@ func (s *EventService) Create(ctx context.Context, req CreateEventRequest) (*ent
 		return nil, fmt.Errorf("%s: generate id: %w", op, err)
 	}
 
+	ttl := req.BookingTTLMin
 	now := time.Now().UTC()
 	event := entity.Event{
-		ID:           id,
-		Title:        req.Title,
-		Description:  req.Description,
-		Date:         req.Date,
-		TotalSeats:   req.TotalSeats,
-		BookEventTTL: req.BookEventTTL,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:            id,
+		Title:         req.Title,
+		Description:   req.Description,
+		Date:          req.Date,
+		TotalSeats:    req.TotalSeats,
+		BookingTTLMin: ttl,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
 	err = s.tm.ExecuteInTransaction(ctx, op, func(tx pgxdriver.QueryExecuter) error {
@@ -104,7 +105,7 @@ func (s *EventService) Create(ctx context.Context, req CreateEventRequest) (*ent
 	}
 
 	log.LogAttrs(ctx, logger.InfoLevel, "event created",
-		logger.String("event_id", event.ID.String()),
+		logger.Any("event_id", event.ID),
 		logger.Duration("duration", time.Since(startTime)),
 	)
 	return &event, nil
@@ -114,13 +115,13 @@ func (s *EventService) GetWithStats(ctx context.Context, id uuid.UUID) (*entity.
 	const op = "service.event.GetWithStats"
 
 	log := s.log.With("op", op)
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 	defer logSlowOperation(ctx, s.log, op, startTime,
-		logger.String("event_id", id.String()),
+		logger.Any("event_id", id),
 	)
 
 	log.LogAttrs(ctx, logger.DebugLevel, "get event stats requested",
-		logger.String("event_id", id.String()),
+		logger.Any("event_id", id),
 	)
 
 	var result *entity.EventWithStats
@@ -162,7 +163,7 @@ func (s *EventService) GetWithStats(ctx context.Context, id uuid.UUID) (*entity.
 	}
 
 	log.LogAttrs(ctx, logger.InfoLevel, "event stats ready",
-		logger.String("event_id", id.String()),
+		logger.Any("event_id", id),
 		logger.Int("free_seats", result.FreeSeats),
 		logger.Duration("duration", time.Since(startTime)),
 	)
@@ -173,7 +174,7 @@ func (s *EventService) List(ctx context.Context) ([]entity.EventWithStats, error
 	const op = "service.event.List"
 
 	log := s.log.With("op", op)
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 	defer logSlowOperation(ctx, s.log, op, startTime)
 
 	log.LogAttrs(ctx, logger.DebugLevel, "list events requested")

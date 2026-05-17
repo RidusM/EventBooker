@@ -33,19 +33,19 @@ run: deps swagger ## Run the application locally (requires dependencies like DB/
 
 .PHONY: infra-up
 infra-up: ## Start infrastructure only (db, redis, rabbitmq) for local development
-	$(BASE_STACK) up -d db redis rabbitmq
+	$(BASE_STACK) up -d db
 	@echo "Infrastructure started. Wait for healthchecks:"
-	$(BASE_STACK) logs -f db redis rabbitmq
+	$(BASE_STACK) logs -f db
 
 .PHONY: infra-down
 infra-down: ## Down infrastructure only (db, redis, rabbitmq) for local development
 	@echo "Stopping infrastructure..."
-	$(BASE_STACK) down db redis rabbitmq
+	$(BASE_STACK) down db
 	@echo "Infrastructure stopped"
 
 .PHONY: infra-logs
 infra-logs: ## Show logs infrastructure only (db, redis, rabbitmq) for local cevelopment
-	@$(BASE_STACK) logs -f db redis rabbitmq
+	@$(BASE_STACK) logs -f db
 
 .PHONY: compose-up
 compose-up: ## Run all services (infrastructure + app)
@@ -87,7 +87,7 @@ test-verbose: ## Run verbose tests
 .PHONY: integration-test
 integration-test: ## Run integration tests (requires Docker + Git Bash)
 	@echo "Running integration tests..."
-	@$(INTEGRATION_STACK) --env-file "$(CURDIR)/.env" up -d db redis rabbitmq
+	@$(INTEGRATION_STACK) --env-file "$(CURDIR)/.env" up -d db 
 	@echo "Waiting for database..."
 	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
 		$(INTEGRATION_STACK) exec db pg_isready -U postgres -q 2>/dev/null && break || (echo "  ⏳ Waiting..." && sleep 2); \

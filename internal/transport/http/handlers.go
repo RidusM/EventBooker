@@ -33,11 +33,11 @@ func (h *BookingHandler) CreateEvent(c *gin.Context) {
 	}
 
 	serviceReq := service.CreateEventRequest{
-		Title:        req.Title,
-		Description:  req.Description,
-		Date:         req.Date,
-		TotalSeats:   req.TotalSeats,
-		BookEventTTL: time.Duration(req.BookEventTTL) * time.Minute,
+		Title:         req.Title,
+		Description:   req.Description,
+		Date:          req.Date,
+		TotalSeats:    req.TotalSeats,
+		BookingTTLMin: req.BookingTTLMins,
 	}
 
 	event, err := h.eventSvc.Create(ctx, serviceReq)
@@ -192,7 +192,7 @@ func (h *BookingHandler) ConfirmBooking(c *gin.Context) {
 // @Failure 400 {object} ErrorResponse "Invalid input data - email or telegram_id required"
 // @Failure 409 {object} ErrorResponse "User with this email or telegram_id already exists"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /users [post]
+// @Router /auth/sign-up [post]
 func (h *BookingHandler) RegisterUser(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -219,6 +219,78 @@ func (h *BookingHandler) RegisterUser(c *gin.Context) {
 	}
 
 	h.respondJSON(c, http.StatusCreated, response)
+}
+
+// @Summary User login by email
+// @Description Authenticate user by email. Returns user data on success.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Login credentials"
+// @Success 200 {object} LoginResponse "Login successful"
+// @Failure 400 {object} ErrorResponse "Invalid email format"
+// @Failure 404 {object} ErrorResponse "User not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /auth/login [post]
+func (h *BookingHandler) Login(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	var req LoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.respondError(c, http.StatusBadRequest, "invalid_request", "Invalid email format", err)
+		return
+	}
+
+	user, err := h.userSvc.LoginByEmail(ctx, req.Email)
+	if err != nil {
+		h.handleServiceError(c, err)
+		return
+	}
+
+	response := LoginResponse{
+		UserID:  user.ID,
+		Name:    user.Name,
+		Email:   user.Email,
+		Message: "Logged in successfully",
+	}
+
+	h.respondJSON(c, http.StatusOK, response)
+}
+
+// @Summary Get user by ID
+// @Description Returns user data by ID. Used for checking Telegram link status.
+// @Tags Users
+// @Produce json
+// @Param id path string true "User UUID" format(uuid)
+// @Success 200 {object} UserResponse "User data"
+// @Failure 400 {object} ErrorResponse "Invalid ID format"
+// @Failure 404 {object} ErrorResponse "User not found"
+// @Router /users/{id} [get]
+func (h *BookingHandler) GetUser(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		h.respondError(c, http.StatusBadRequest, "invalid_id", "Invalid user ID format", err)
+		return
+	}
+
+	user, err := h.userSvc.GetUserByID(ctx, id)
+	if err != nil {
+		h.handleServiceError(c, err)
+		return
+	}
+
+	response := UserResponse{
+		ID:         user.ID,
+		Name:       user.Name,
+		Email:      user.Email,
+		TelegramID: user.TelegramID,
+		CreatedAt:  user.CreatedAt,
+	}
+
+	h.respondJSON(c, http.StatusOK, response)
 }
 
 // @Summary Generate Telegram Link Token
@@ -271,7 +343,7 @@ func (h *BookingHandler) GenerateLinkToken(c *gin.Context) {
 func (h *BookingHandler) ListUsers(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	events, err := h.eventSvc.List(ctx)
+	events, err := h.userSvc.List(ctx)
 	if err != nil {
 		h.handleServiceError(c, err)
 		return
@@ -289,7 +361,7 @@ func (h *BookingHandler) ListUsers(c *gin.Context) {
 func (h *BookingHandler) Health(c *gin.Context) {
 	response := HealthResponse{
 		Status: "ok",
-		Time:   time.Now(),
+		Time:   time.Now().UTC(),
 	}
 	h.respondJSON(c, http.StatusOK, response)
 }

@@ -7,14 +7,14 @@ import (
 )
 
 type Event struct {
-	ID           uuid.UUID
-	Title        string
-	Description  string
-	Date         time.Time
-	TotalSeats   int
-	BookEventTTL time.Duration
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID            uuid.UUID
+	Title         string
+	Description   string
+	Date          time.Time
+	TotalSeats    int
+	BookingTTLMin int
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 type EventWithStats struct {

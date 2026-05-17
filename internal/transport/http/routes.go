@@ -25,18 +25,28 @@ func (h *BookingHandler) setupRoutes() {
 
 	events := h.router.Group("/events")
 	{
-		events.POST("/events", h.CreateEvent)
-		events.GET("/events", h.ListEvents)
-		events.GET("/events/:id", h.GetEvent)
-		events.POST("/events/:id/book", h.BookEvent)
-		events.POST("/events/:id/confirm", h.ConfirmBooking)
+		events.POST("", h.CreateEvent)
+		events.GET("", h.ListEvents)
+		events.GET("/:id", h.GetEvent)
+		events.POST("/:id/book", h.BookEvent)
+	}
+
+	bookings := h.router.Group("/bookings")
+	{
+		bookings.POST("/confirm", h.ConfirmBooking)
 	}
 
 	users := h.router.Group("/users")
 	{
-		users.POST("", h.RegisterUser)
 		users.POST("/:user_id/link-token", h.GenerateLinkToken)
-		users.GET("/users", h.ListUsers)
+		users.GET("/:id", h.GetUser)
+		users.GET("", h.ListUsers)
+	}
+
+	auth := h.router.Group("/auth")
+	{
+		auth.POST("/login", h.Login)
+		auth.POST("/sign-up", h.RegisterUser)
 	}
 
 	h.router.GET("/", func(c *gin.Context) {
